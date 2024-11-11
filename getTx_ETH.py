@@ -1,9 +1,12 @@
 import pandas as pd
 import requests
 import time
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
+etherscan_api = os.getenv("ETH_API")
 # Etherscan API 키
-API_KEY = '8SV67VIYNCWD3TMDW3CHSSXN2EH93UBTDM'
+API_KEY = etherscan_api
 
 # 데이터 로드
 data = pd.read_csv('top_address_ETH.csv')

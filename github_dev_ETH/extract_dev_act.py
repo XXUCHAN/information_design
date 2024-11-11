@@ -1,10 +1,14 @@
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
 
-# GitHub 인증 설정 (토큰 입력 필요)
+# .env 파일 로드
+load_dotenv()
+git_token = os.getenv("GITHUB_TOKEN")
 headers = {
-    'Authorization': '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'
+    'Authorization': git_token
 }
 # 리포지토리 정보 설정 (예시: 'ethereum' 리포지토리의 'go-ethereum')
 owner = 'ethereum'

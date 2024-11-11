@@ -2,9 +2,12 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 import time
-
-# Etherscan API Key 설정
-API_KEY = '8SV67VIYNCWD3TMDW3CHSSXN2EH93UBTDM'
+import os
+from dotenv import load_dotenv
+load_dotenv()
+etherscan_api = os.getenv("ETH_API")
+# Etherscan API 키
+API_KEY = etherscan_api
 # 시작일과 종료일 설정
 start_date = datetime(2020, 11, 8)
 end_date = datetime(2024, 11, 8)
