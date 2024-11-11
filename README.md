@@ -41,3 +41,8 @@ blockchain data ETL - whale, git_dev, google_searching
 3. Netflwo_Whale - netflow(graph)
 4. Google-trends - search_value(graph, TLCC, TLCC + BackTesting)
 5. Dev-activity - commits_value(graph, TLCC, TLCC + BackTesting)
+
+### 해야할 것 : 
+1. 활성 지갑 수 데이터 추출 시도
+2. 나머지 지표에 TLCC, BackTesting 적용
+3. 각 지표의 값을 합쳐서 BackTesting 시도 후 수익률 분석
