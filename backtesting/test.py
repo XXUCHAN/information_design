@@ -79,7 +79,7 @@ for indicator, lag in optimal_lags.items():
     print(f"{indicator}: {lag}")
 
 # threshold 범위 설정
-threshold_ranges = {'deposit_freq': [0.5, 1, 2, 3, 4, 5], 'withdrawal_freq': [0.5, 1, 2]}
+threshold_ranges = {'deposit_freq': [0.5, 1, 2, 3, 4], 'withdrawal_freq': [0.5, 1]}
 selected_threshold_ranges = {key: threshold_ranges[key] for key in selected_indicators}
 threshold_combinations = list(product(*selected_threshold_ranges.values()))
 
@@ -87,6 +87,7 @@ threshold_combinations = list(product(*selected_threshold_ranges.values()))
 def backtest(data, thresholds, cash=10000):
     data = data.copy()
     position = 0
+    buy_sell_dates = []  # 매수 및 매도 날짜를 저장할 리스트
 
     # 입금 지표를 기준으로 매수 신호 생성
     primary_threshold = thresholds['deposit_freq']
@@ -105,37 +106,46 @@ def backtest(data, thresholds, cash=10000):
         lambda row: row['primary_signal'] if row['primary_signal'] == row['secondary_signal'] else 0, axis=1
     )
 
-    # 백테스팅 실행
+    # 백테스팅 실행 및 매수/매도 날짜 기록
     for _, row in data.iterrows():
         price = row['Close']
         signal = row['final_signal']
         if signal == 1 and cash > 0:
             position = cash / price
             cash = 0
+            buy_sell_dates.append((row['Date'], 'BUY', price))  # 매수 날짜와 가격 기록
         elif signal == -1 and position > 0:
             cash = position * price
             position = 0
+            buy_sell_dates.append((row['Date'], 'SELL', price))  # 매도 날짜와 가격 기록
 
     # 최종 포트폴리오 가치 계산
     final_value = cash + position * data.iloc[-1]['Close']
-    return final_value
+    return final_value, buy_sell_dates
 
 # 최적 threshold 및 포트폴리오 결과 찾기
 best_thresholds = {}
 best_final_value = 0
+best_buy_sell_dates = []
 
 print("\nThreshold Scenarios and Portfolio Values:")
 for thresholds in threshold_combinations:
     threshold_dict = dict(zip(selected_threshold_ranges.keys(), thresholds))
-    final_value = backtest(merged_data, threshold_dict)
+    final_value, buy_sell_dates = backtest(merged_data, threshold_dict)
     print(f"Thresholds: {threshold_dict} -> Final Portfolio Value: ${final_value:.2f}")
 
     # 최적 threshold 갱신
     if final_value > best_final_value:
         best_final_value = final_value
         best_thresholds = threshold_dict
+        best_buy_sell_dates = buy_sell_dates
 
 # 최적 threshold 및 포트폴리오 결과 출력
 print("\nBest Thresholds for Maximum Portfolio Value:")
 print(f"Best Thresholds: {best_thresholds}")
 print(f"Highest Final Portfolio Value: ${best_final_value:.2f}")
+
+# 매수/매도 날짜 출력
+print("\nInvestment Scenario with Buy/Sell Dates:")
+for date, action, price in best_buy_sell_dates:
+    print(f"{date.date()} - {action} at ${price:.2f}")
