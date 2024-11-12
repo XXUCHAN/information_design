@@ -79,7 +79,7 @@ for indicator, lag in optimal_lags.items():
     print(f"{indicator}: {lag}")
 
 # threshold 범위 설정
-threshold_ranges = {'deposit_freq': [0.5,1,2,3,4,5], 'withdrawal_freq': [0.5,1,2]}
+threshold_ranges = {'deposit_freq': [0.5, 1, 2, 3, 4, 5], 'withdrawal_freq': [0.5, 1, 2]}
 selected_threshold_ranges = {key: threshold_ranges[key] for key in selected_indicators}
 threshold_combinations = list(product(*selected_threshold_ranges.values()))
 
@@ -88,16 +88,16 @@ def backtest(data, thresholds, cash=10000):
     data = data.copy()
     position = 0
 
-    # 첫 번째 신호 생성
+    # 입금 지표를 기준으로 매수 신호 생성
     primary_threshold = thresholds['deposit_freq']
     data['primary_signal'] = data['deposit_freq'].shift(optimal_lags['deposit_freq']).fillna(0).apply(
-        lambda x: 1 if x > primary_threshold else -1
+        lambda x: 1 if x > primary_threshold else -1  # 입금량 증가 시 매수(+1), 감소 시 매도(-1)
     )
 
-    # 두 번째 신호 생성
+    # 출금 지표를 기준으로 매도 신호 생성
     secondary_threshold = thresholds['withdrawal_freq']
     data['secondary_signal'] = data['withdrawal_freq'].shift(optimal_lags['withdrawal_freq']).fillna(0).apply(
-        lambda x: 1 if x > secondary_threshold else -1
+        lambda x: -1 if x > secondary_threshold else 1  # 출금량 증가 시 매도(-1), 감소 시 매수(+1)
     )
 
     # 최종 신호 생성: 두 신호가 일치할 때만 최종 신호 발생
