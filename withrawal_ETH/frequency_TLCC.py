@@ -42,7 +42,7 @@ print(f"Optimal lag: {optimal_lag}")
 initial_cash = 10000
 
 # 다양한 threshold 값 테스트
-threshold_values = [0.5, 1, 2]  # 테스트할 threshold 값들
+threshold_values = [0.5, 1,1.5]  # 테스트할 threshold 값들
 best_threshold = None
 best_final_value = 0
 
