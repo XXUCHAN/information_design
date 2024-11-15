@@ -70,7 +70,6 @@ def find_optimal_lag(series1, series2, max_lag=30):
     return np.argmax(np.abs(correlations)) + 1
 
 # 각 선택된 지표에 대해 최적 lag 계산
-selected_indicators = ['deposit_freq', 'withdrawal_freq']
 optimal_lags = {col: find_optimal_lag(merged_data[col], merged_data['Close']) for col in selected_indicators}
 
 # 최적의 lag 출력
@@ -83,43 +82,84 @@ threshold_ranges = {'deposit_freq': [0.5, 1, 2, 3, 4], 'withdrawal_freq': [0.5, 
 selected_threshold_ranges = {key: threshold_ranges[key] for key in selected_indicators}
 threshold_combinations = list(product(*selected_threshold_ranges.values()))
 
-# 백테스팅 함수 정의
+# 백테스팅 함수 정의 (정방향)
 def backtest(data, thresholds, cash=10000):
     data = data.copy()
     position = 0
-    buy_sell_dates = []  # 매수 및 매도 날짜를 저장할 리스트
+    buy_sell_dates = []
 
     # 입금 지표를 기준으로 매수 신호 생성
     primary_threshold = thresholds['deposit_freq']
     data['primary_signal'] = data['deposit_freq'].shift(optimal_lags['deposit_freq']).fillna(0).apply(
-        lambda x: 1 if x > primary_threshold else -1  # 입금량 증가 시 매수(+1), 감소 시 매도(-1)
+        lambda x: 1 if x > primary_threshold else -1
     )
 
     # 출금 지표를 기준으로 매도 신호 생성
     secondary_threshold = thresholds['withdrawal_freq']
     data['secondary_signal'] = data['withdrawal_freq'].shift(optimal_lags['withdrawal_freq']).fillna(0).apply(
-        lambda x: -1 if x > secondary_threshold else 1  # 출금량 증가 시 매도(-1), 감소 시 매수(+1)
+        lambda x: -1 if x > secondary_threshold else 1
     )
 
-    # 최종 신호 생성: 두 신호가 일치할 때만 최종 신호 발생
+    # 최종 신호 생성
     data['final_signal'] = data.apply(
         lambda row: row['primary_signal'] if row['primary_signal'] == row['secondary_signal'] else 0, axis=1
     )
 
-    # 백테스팅 실행 및 매수/매도 날짜 기록
+    # 백테스팅 실행
     for _, row in data.iterrows():
         price = row['Close']
         signal = row['final_signal']
         if signal == 1 and cash > 0:
             position = cash / price
             cash = 0
-            buy_sell_dates.append((row['Date'], 'BUY', price))  # 매수 날짜와 가격 기록
+            buy_sell_dates.append((row['Date'], 'BUY', price))
         elif signal == -1 and position > 0:
             cash = position * price
             position = 0
-            buy_sell_dates.append((row['Date'], 'SELL', price))  # 매도 날짜와 가격 기록
+            buy_sell_dates.append((row['Date'], 'SELL', price))
 
-    # 최종 포트폴리오 가치 계산
+    final_value = cash + position * data.iloc[-1]['Close']
+    return final_value, buy_sell_dates
+
+# 백테스팅 함수 정의 (역방향)
+def backtest_reverse(data, thresholds, cash=10000):
+    data = data.copy()
+    position = 0
+    buy_sell_dates = []
+
+    # 데이터를 최신 날짜에서 과거 날짜 순으로 정렬
+    data = data.sort_values(by='Date', ascending=False).reset_index(drop=True)
+
+    # 입금 지표를 기준으로 매수 신호 생성
+    primary_threshold = thresholds['deposit_freq']
+    data['primary_signal'] = data['deposit_freq'].shift(-optimal_lags['deposit_freq']).fillna(0).apply(
+        lambda x: 1 if x > primary_threshold else -1
+    )
+
+    # 출금 지표를 기준으로 매도 신호 생성
+    secondary_threshold = thresholds['withdrawal_freq']
+    data['secondary_signal'] = data['withdrawal_freq'].shift(-optimal_lags['withdrawal_freq']).fillna(0).apply(
+        lambda x: -1 if x > secondary_threshold else 1
+    )
+
+    # 최종 신호 생성
+    data['final_signal'] = data.apply(
+        lambda row: row['primary_signal'] if row['primary_signal'] == row['secondary_signal'] else 0, axis=1
+    )
+
+    # 백테스팅 실행
+    for _, row in data.iterrows():
+        price = row['Close']
+        signal = row['final_signal']
+        if signal == 1 and cash > 0:
+            position = cash / price
+            cash = 0
+            buy_sell_dates.append((row['Date'], 'BUY', price))
+        elif signal == -1 and position > 0:
+            cash = position * price
+            position = 0
+            buy_sell_dates.append((row['Date'], 'SELL', price))
+
     final_value = cash + position * data.iloc[-1]['Close']
     return final_value, buy_sell_dates
 
@@ -128,24 +168,108 @@ best_thresholds = {}
 best_final_value = 0
 best_buy_sell_dates = []
 
-print("\nThreshold Scenarios and Portfolio Values:")
+print("\nThreshold Scenarios and Portfolio Values (Forward):")
 for thresholds in threshold_combinations:
     threshold_dict = dict(zip(selected_threshold_ranges.keys(), thresholds))
     final_value, buy_sell_dates = backtest(merged_data, threshold_dict)
     print(f"Thresholds: {threshold_dict} -> Final Portfolio Value: ${final_value:.2f}")
 
-    # 최적 threshold 갱신
     if final_value > best_final_value:
         best_final_value = final_value
         best_thresholds = threshold_dict
         best_buy_sell_dates = buy_sell_dates
-
-# 최적 threshold 및 포트폴리오 결과 출력
-print("\nBest Thresholds for Maximum Portfolio Value:")
+print("\n",best_buy_sell_dates)
+print("\nBest Thresholds for Maximum Portfolio Value (Forward):")
 print(f"Best Thresholds: {best_thresholds}")
 print(f"Highest Final Portfolio Value: ${best_final_value:.2f}")
 
+# 역방향 최적 threshold 및 포트폴리오 결과 찾기
+best_thresholds_reverse = {}
+best_final_value_reverse = 0
+best_buy_sell_dates_reverse = []
+
+print("\nThreshold Scenarios and Portfolio Values (Reverse):")
+for thresholds in threshold_combinations:
+    threshold_dict = dict(zip(selected_threshold_ranges.keys(), thresholds))
+    final_value, buy_sell_dates = backtest_reverse(merged_data, threshold_dict)
+    print(f"Thresholds: {threshold_dict} -> Final Portfolio Value: ${final_value:.2f}")
+
+    if final_value > best_final_value_reverse:
+        best_final_value_reverse = final_value
+        best_thresholds_reverse = threshold_dict
+        best_buy_sell_dates_reverse = buy_sell_dates
+
+print("\nBest Thresholds for Maximum Portfolio Value (Reverse):")
+print(f"Best Thresholds: {best_thresholds_reverse}")
+print(f"Highest Final Portfolio Value: ${best_final_value_reverse:.2f}")
+
 # 매수/매도 날짜 출력
-print("\nInvestment Scenario with Buy/Sell Dates:")
-for date, action, price in best_buy_sell_dates:
+print("\nInvestment Scenario with Buy/Sell Dates (Reverse):")
+for date, action, price in best_buy_sell_dates_reverse:
     print(f"{date.date()} - {action} at ${price:.2f}")
+
+# Hold 전략의 수익률 계산
+initial_price = merged_data.iloc[0]['Close']  # 첫날의 가격
+final_price = merged_data.iloc[-1]['Close']  # 마지막 날의 가격
+hold_return = (final_price - initial_price) / initial_price * 100  # 수익률(%)
+# Hold 전략
+print(f"Hold Strategy {start_date}-{initial_price:.2f} ~ {end_date}-{final_price:.2f} : {hold_return:.2f}%")
+
+#손실보존률 계산
+def calculate_loss_preservation(data, signals, initial_cash=10000):
+    """
+    Calculate the loss preservation ratio for a given strategy.
+    """
+    # Identify market downtrend periods
+    data['Return'] = data['Close'].pct_change()
+    downtrend = data['Return'] < 0  # 하락 구간 식별
+
+    # Ensure indices match
+    data = data.reset_index(drop=True)
+    downtrend = downtrend.reset_index(drop=True)
+
+    # Combine strategy signals with data
+    data = data.merge(signals[['Date', 'final_signal']], on='Date', how='left')
+
+    # Market loss calculation
+    market_down_close = data.loc[downtrend, 'Close']
+    if not market_down_close.empty:
+        market_loss = (market_down_close.iloc[-1] - market_down_close.iloc[0]) / market_down_close.iloc[0]
+    else:
+        market_loss = 0
+
+    # Strategy loss calculation
+    cash = initial_cash
+    position = 0
+    for _, row in data.iterrows():
+        price = row['Close']
+        signal = row['final_signal']
+        if signal == 1 and cash > 0:  # BUY
+            position = cash / price
+            cash = 0
+        elif signal == -1 and position > 0:  # SELL
+            cash = position * price
+            position = 0
+
+    final_value = cash + position * data.iloc[-1]['Close']
+    strategy_loss = (final_value - initial_cash) / initial_cash
+
+    # Loss preservation ratio
+    if market_loss != 0:
+        loss_preservation_ratio = strategy_loss / market_loss
+    else:
+        loss_preservation_ratio = None  # 시장 손실이 없으면 비율 계산 불가
+
+    return loss_preservation_ratio
+
+# 순방향 백테스팅 후 손실보존률 계산
+forward_signals = pd.DataFrame(best_buy_sell_dates, columns=['Date', 'Action', 'Price'])
+forward_signals['final_signal'] = forward_signals['Action'].apply(lambda x: 1 if x == 'BUY' else -1)
+forward_loss_preservation = calculate_loss_preservation(merged_data, forward_signals)
+print(f"Loss Preservation Ratio (Forward): {forward_loss_preservation}")
+
+# 역방향 백테스팅 후 손실보존률 계산
+reverse_signals = pd.DataFrame(best_buy_sell_dates_reverse, columns=['Date', 'Action', 'Price'])
+reverse_signals['final_signal'] = reverse_signals['Action'].apply(lambda x: 1 if x == 'BUY' else -1)
+reverse_loss_preservation = calculate_loss_preservation(merged_data, reverse_signals)
+print(f"Loss Preservation Ratio (Reverse): {reverse_loss_preservation}")
