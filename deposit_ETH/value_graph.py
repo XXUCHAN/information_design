@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 필터링된 데이터 로드
-data = pd.read_csv('deposit_value_eth.csv')
+data = pd.read_csv('deposit_volume.csv')
 
 # timeStamp를 datetime 형식으로 변환
 data['timeStamp'] = pd.to_datetime(data['timeStamp'])

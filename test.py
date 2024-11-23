@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 import json
 
 # 사용자 데이터 불러오기
-csv_file = 'google_searching/multiTimeline.csv'
+csv_file = 'google_searching/google_search.csv'
 search_data = pd.read_csv(csv_file, header=None, names=['date', 'search_volume'])
 search_data['date'] = pd.to_datetime(search_data['date'])
 search_data.set_index('date', inplace=True)

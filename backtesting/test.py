@@ -5,7 +5,7 @@ from itertools import product
 # CSV 파일 읽기 (업로드된 파일 경로에 맞게 수정)
 eth_prices = pd.read_csv('../ethereum_daily_prices.csv', parse_dates=['Date'])
 deposit_freq = pd.read_csv('../deposit_ETH/deposit_frequency.csv')
-deposit_value = pd.read_csv('../deposit_ETH/deposit_value_eth.csv')
+deposit_value = pd.read_csv('../deposit_ETH/deposit_volume.csv')
 daily_commits = pd.read_csv('../github_dev_ETH/daily_commits.csv', parse_dates=['commit_date'])
 netflow_eth = pd.read_csv('../netflow_ETH/netflow_eth.csv')
 withdrawal_value = pd.read_csv('../withrawal_ETH/withdrawal_eth.csv')
@@ -121,41 +121,30 @@ def backtest(data, thresholds, cash=10000):
     final_value = cash + position * data.iloc[-1]['Close']
     return final_value, buy_sell_dates
 
-# 백테스팅 함수 정의 (역방향)
+
+# 역방향 백테스팅 - 현재 신호 기준으로 과거 검증
 def backtest_reverse(data, thresholds, cash=10000):
     data = data.copy()
     position = 0
     buy_sell_dates = []
 
-    # 데이터를 최신 날짜에서 과거 날짜 순으로 정렬
-    data = data.sort_values(by='Date', ascending=False).reset_index(drop=True)
-
-    # 입금 지표를 기준으로 매수 신호 생성
+    # 현재 데이터를 기준으로 신호 조건 생성
     primary_threshold = thresholds['deposit_freq']
-    data['primary_signal'] = data['deposit_freq'].shift(-optimal_lags['deposit_freq']).fillna(0).apply(
-        lambda x: 1 if x > primary_threshold else -1
-    )
-
-    # 출금 지표를 기준으로 매도 신호 생성
     secondary_threshold = thresholds['withdrawal_freq']
-    data['secondary_signal'] = data['withdrawal_freq'].shift(-optimal_lags['withdrawal_freq']).fillna(0).apply(
-        lambda x: -1 if x > secondary_threshold else 1
-    )
 
-    # 최종 신호 생성
-    data['final_signal'] = data.apply(
-        lambda row: row['primary_signal'] if row['primary_signal'] == row['secondary_signal'] else 0, axis=1
-    )
-
-    # 백테스팅 실행
-    for _, row in data.iterrows():
+    # 데이터를 최신 날짜에서 과거 날짜로 순회하며 신호 확인
+    for i in range(len(data) - 1, -1, -1):
+        row = data.iloc[i]
         price = row['Close']
-        signal = row['final_signal']
-        if signal == 1 and cash > 0:
+        deposit_signal = row['deposit_freq'] > primary_threshold
+        withdrawal_signal = row['withdrawal_freq'] > secondary_threshold
+
+        # BUY or SELL 신호 발생
+        if deposit_signal and not withdrawal_signal and cash > 0:
             position = cash / price
             cash = 0
             buy_sell_dates.append((row['Date'], 'BUY', price))
-        elif signal == -1 and position > 0:
+        elif withdrawal_signal and position > 0:
             cash = position * price
             position = 0
             buy_sell_dates.append((row['Date'], 'SELL', price))
@@ -211,9 +200,9 @@ for date, action, price in best_buy_sell_dates_reverse:
 # Hold 전략의 수익률 계산
 initial_price = merged_data.iloc[0]['Close']  # 첫날의 가격
 final_price = merged_data.iloc[-1]['Close']  # 마지막 날의 가격
-hold_return = (final_price - initial_price) / initial_price * 100  # 수익률(%)
+hold_return = 10000+(final_price - initial_price)  # 수익률(%)
 # Hold 전략
-print(f"Hold Strategy {start_date}-{initial_price:.2f} ~ {end_date}-{final_price:.2f} : {hold_return:.2f}%")
+print(f"Hold Strategy {start_date}-{initial_price:.2f} ~ {end_date}-{final_price:.2f} : ${hold_return:.2f}")
 
 #손실보존률 계산
 def calculate_loss_preservation(data, signals, initial_cash=10000):
@@ -273,3 +262,4 @@ reverse_signals = pd.DataFrame(best_buy_sell_dates_reverse, columns=['Date', 'Ac
 reverse_signals['final_signal'] = reverse_signals['Action'].apply(lambda x: 1 if x == 'BUY' else -1)
 reverse_loss_preservation = calculate_loss_preservation(merged_data, reverse_signals)
 print(f"Loss Preservation Ratio (Reverse): {reverse_loss_preservation}")
+

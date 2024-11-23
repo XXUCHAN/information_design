@@ -1,7 +1,7 @@
 import pandas as pd
 
 # 주어진 검색량 데이터 파일 경로
-file_path = 'multiTimeline.csv'
+file_path = 'google_search.csv'
 
 # CSV 파일 읽기
 search_data = pd.read_csv(file_path)

@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-data = pd.read_csv('multiTimeline.csv')
+data = pd.read_csv('google_search.csv')
 # 날짜 형식 변환
 data["Date"] = pd.to_datetime(data["Date"])
 data.set_index("Date", inplace=True)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # CSV 파일 읽기
 eth_prices = pd.read_csv('../ethereum_weekly_prices.csv', parse_dates=['Date'])
-google_trends = pd.read_csv('multiTimeline.csv', parse_dates=['Date'])  # 구글 검색량 데이터
+google_trends = pd.read_csv('google_search.csv', parse_dates=['Date'])  # 구글 검색량 데이터
 
 # 두 데이터프레임의 Date 열을 동일한 형식으로 변환 (UTC 제거)
 eth_prices['Date'] = eth_prices['Date'].dt.tz_localize(None)
