@@ -16,8 +16,8 @@ merged_data = pd.merge(eth_prices, withdrawal_data, on='Date', how='left')
 merged_data['Frequency'] = merged_data['Frequency'].fillna(0)
 
 # 사용자로부터 시작일과 종료일 입력받기
-start_date = '2021-08-04'  # 예시 시작일 (사용자가 변경할 수 있음)
-end_date = '2024-08-04'    # 예시 종료일 (사용자가 변경할 수 있음)
+start_date = '2022-11-08'  # 예시 시작일 (사용자가 변경할 수 있음)
+end_date = '2024-11-08'    # 예시 종료일 (사용자가 변경할 수 있음)
 
 # 시작일과 종료일을 기준으로 데이터 필터링
 merged_data = merged_data[(merged_data['Date'] >= start_date) & (merged_data['Date'] <= end_date)].copy()

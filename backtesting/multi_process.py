@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from itertools import product, combinations
-
+from multiprocessing import Pool, cpu_count
+import time  # 실행 시간 측정을 위한 모듈
 # CSV 파일 읽기 (파일 경로 수정)
 eth_prices = pd.read_csv('../ethereum_daily_prices.csv', parse_dates=['Date'])
 deposit_freq = pd.read_csv('../deposit_ETH/deposit_frequency.csv')
@@ -16,9 +17,17 @@ withdrawal_freq.rename(columns={'Frequency': 'withdrawal_freq'}, inplace=True)
 daily_commits.rename(columns={'commit_date': 'Date', 'count': 'daily_commits'}, inplace=True)
 search_freq.rename(columns={'Frequency': 'search_freq'}, inplace=True)
 netflow_eth.rename(columns={'value': 'netflow_eth'}, inplace=True)
-
+netflow_eth.rename(columns={'timeStamp': 'Date'}, inplace=True)
 # UTC 제거 및 데이터 병합 준비
 eth_prices['Date'] = eth_prices['Date'].dt.tz_localize(None)
+withdrawal_freq['Date'] = pd.to_datetime(withdrawal_freq['Date'], errors='coerce')
+deposit_freq['Date'] = pd.to_datetime(deposit_freq['Date'],errors='coerce')
+daily_commits['Date'] = pd.to_datetime(daily_commits['Date'],errors='coerce')
+search_freq['Date'] = pd.to_datetime(search_freq['Date'],errors='coerce')
+netflow_eth['Date'] = pd.to_datetime(netflow_eth['Date'],errors='coerce')
+
+
+
 datasets = {
     'deposit_freq': deposit_freq,
     'daily_commits': daily_commits,
@@ -48,9 +57,11 @@ for col in merged_data.columns:
         print(f"Warning: Non-numeric data in column '{col}', converting to numeric.")
         merged_data[col] = pd.to_numeric(merged_data[col], errors='coerce')
 
+dates = merged_data['Date']
+
 # 사용자 입력: 날짜 범위
-start_date = pd.to_datetime("2021-08-04")
-end_date = pd.to_datetime("2024-08-04")
+start_date = pd.to_datetime("2020-11-08")
+end_date = pd.to_datetime("2024-11-08")
 print(f"Filtering data from {start_date} to {end_date}...")
 merged_data = merged_data[(merged_data['Date'] >= start_date) & (merged_data['Date'] <= end_date)]
 
@@ -63,23 +74,26 @@ all_indicators = {
     'search_freq': [8, 13.07, 13.21, 15, 15.64]
 }
 
-# TLCC를 계산하는 함수
-def safe_find_optimal_lag(series1, series2, max_lag=30):
+def safe_find_optimal_lag(series1, series2, dates, start_date, end_date, max_lag=30):
+    # 날짜 범위 필터링
+    valid_idx = (dates >= start_date) & (dates <= end_date) & series1.notna() & series2.notna()
+    series1 = series1[valid_idx]
+    series2 = series2[valid_idx]
+
     correlations = []
     for lag in range(1, max_lag + 1):
         shifted_series1 = series1.shift(lag)
-        valid_idx = shifted_series1.notna() & series2.notna()
-
-        if valid_idx.sum() > 10:
+        valid_lag_idx = shifted_series1.notna() & series2.notna()
+        if valid_lag_idx.sum() > 10:  # 충분한 데이터가 있을 때만 계산
             try:
-                corr = shifted_series1[valid_idx].corr(series2[valid_idx])
+                corr = shifted_series1[valid_lag_idx].corr(series2[valid_lag_idx])
                 correlations.append(corr)
-            except Exception as e:
-                print(f"Correlation calculation failed for lag {lag}: {e}")
+            except Exception:
                 correlations.append(np.nan)
         else:
             correlations.append(np.nan)
 
+    # 유효한 상관계수 중 최대값 반환
     correlations = [c for c in correlations if not np.isnan(c)]
     if not correlations:
         return None
@@ -108,15 +122,15 @@ def generate_signal(data, indicator, threshold, lag=None):
 # 백테스팅 함수
 def safe_backtest(data, thresholds, cash=10000):
     data = data.copy()
-    lags = {}  # 최적 lag 값을 저장할 딕셔너리
+    lags = {}
 
     for indicator, threshold in thresholds.items():
-        lag = safe_find_optimal_lag(data[indicator], data['Close'])
+        lag = safe_find_optimal_lag(data[indicator], data['Close'],dates,start_date,end_date)
 
         if lag is None:
-            return None, None, None  # lag 값을 포함해 None 반환
+            return None, None, None
 
-        lags[indicator] = lag  # 각 지표의 최적 lag 저장
+        lags[indicator] = lag
         data = generate_signal(data, indicator, threshold, lag)
 
     data['final_signal'] = np.sign(
@@ -177,46 +191,56 @@ def safe_calculate_loss_preservation(data, signals, initial_cash=10000):
     strategy_loss = (final_value - initial_cash) / initial_cash
     return strategy_loss / market_loss if market_loss != 0 else None
 
-# 조합 생성
-fixed_indicators = ['deposit_freq', 'withdrawal_freq']
-other_indicators = [key for key in all_indicators.keys() if key not in fixed_indicators]
-valid_combinations = [
-    fixed_indicators + list(combination)
-    for i in range(0, len(other_indicators) + 1)
-    for combination in combinations(other_indicators, i)
-]
+# 기존의 모든 함수 정의 (safe_backtest, safe_calculate_loss_preservation, etc.) 유지...
 
-# 테스트 실행
-combination_results = []
-print("Running backtests for all combinations...")
-for indicator_combination in valid_combinations:
-    print(f"Testing combination: {indicator_combination}...")
-    threshold_ranges = {key: all_indicators[key] for key in indicator_combination}
-    threshold_combinations = list(product(*[threshold_ranges[key] for key in indicator_combination if threshold_ranges[key]]))
-    selected_data = merged_data[['Date', 'Close'] + indicator_combination]
+def process_combination(args):
+    selected_data, indicator_combination, thresholds, initial_cash = args
 
-    for thresholds in threshold_combinations:
-        threshold_dict = dict(zip(indicator_combination, thresholds))
-        final_value, buy_sell_dates, lags = safe_backtest(selected_data, threshold_dict)
+    threshold_dict = dict(zip(indicator_combination, thresholds))
+    final_value, buy_sell_dates, lags = safe_backtest(selected_data, threshold_dict)
 
-        if final_value is None:
-            print(f"Skipping combination: {indicator_combination} with thresholds {threshold_dict} (No valid correlation).")
-            continue
+    if final_value is None:
+        return None
 
-        signals = pd.DataFrame(buy_sell_dates, columns=['Date', 'Action', 'Price'])
-        signals['final_signal'] = signals['Action'].apply(lambda x: 1 if x == 'BUY' else -1)
-        loss_preservation = safe_calculate_loss_preservation(selected_data, signals)
+    signals = pd.DataFrame(buy_sell_dates, columns=['Date', 'Action', 'Price'])
+    signals['final_signal'] = signals['Action'].apply(lambda x: 1 if x == 'BUY' else -1)
+    loss_preservation = safe_calculate_loss_preservation(selected_data, signals, initial_cash)
 
-        combination_results.append({
-            'combination': indicator_combination,
-            'thresholds': threshold_dict,
-            'portfolio_value': final_value,
-            'loss_preservation_ratio': loss_preservation,
-            'buy_sell_dates': buy_sell_dates,
-            'lags': lags  # 각 조합의 lag 저장
-        })
+    return {
+        'combination': indicator_combination,
+        'thresholds': threshold_dict,
+        'portfolio_value': final_value,
+        'loss_preservation_ratio': loss_preservation,
+        'buy_sell_dates': buy_sell_dates,
+        'lags': lags
+    }
 
-# 수익률 상위 3개 결과 출력 함수
+def run_combinations_in_parallel(merged_data, all_indicators, initial_cash=10000):
+    fixed_indicators = ['deposit_freq', 'withdrawal_freq']
+    other_indicators = [key for key in all_indicators.keys() if key not in fixed_indicators]
+    valid_combinations = [
+        fixed_indicators + list(combination)
+        for i in range(0, len(other_indicators) + 1)
+        for combination in combinations(other_indicators, i)
+    ]
+
+    tasks = []
+    for indicator_combination in valid_combinations:
+        threshold_ranges = {key: all_indicators[key] for key in indicator_combination}
+        threshold_combinations = list(product(*[threshold_ranges[key] for key in indicator_combination if threshold_ranges[key]]))
+        selected_data = merged_data[['Date', 'Close'] + indicator_combination]
+
+        for thresholds in threshold_combinations:
+            tasks.append((selected_data, indicator_combination, thresholds, initial_cash))
+
+    start_time = time.time()  # 시작 시간 기록
+    with Pool(processes=cpu_count()) as pool:
+        results = pool.map(process_combination, tasks)
+    end_time = time.time()  # 종료 시간 기록
+
+    print(f"\nParallel processing completed in {end_time - start_time:.2f} seconds.")
+    return [result for result in results if result is not None]
+
 def print_top_results_by_portfolio_value(results, top_n=3):
     sorted_results = sorted(results, key=lambda x: x['portfolio_value'], reverse=True)[:top_n]
     if not sorted_results:
@@ -235,38 +259,30 @@ def print_top_results_by_portfolio_value(results, top_n=3):
         for date, action, price in result['buy_sell_dates']:
             print(f"  {date} - {action} at ${price:.2f}")
 
-# 투자 전략별 결과 필터링
-def filter_results_by_strategy(results, investor_type, initial_cash=10000, top_n=3):
-    valid_results = [
-        result for result in results
-        if result['loss_preservation_ratio'] is not None and result['portfolio_value'] > initial_cash
-    ]
+if __name__ == '__main__':
+    print("Running backtests in parallel...")
 
-    if not valid_results:
-        print("No valid scenarios found with profit above the initial investment.")
-        return []
+    # 전체 처리 시작 시간
+    total_start_time = time.time()
 
-    if investor_type == "defensive":
-        sorted_results = sorted(valid_results, key=lambda x: (x['loss_preservation_ratio'], -x['portfolio_value']))
-    elif investor_type == "aggressive":
-        aggressive_results = [res for res in valid_results if res['loss_preservation_ratio'] < 1]
-        if not aggressive_results:
-            print("No valid aggressive scenarios with loss preservation ratio less than 1.")
-            return []
-        sorted_results = sorted(aggressive_results, key=lambda x: -x['portfolio_value'])
-    else:
-        raise ValueError("Invalid investor type. Choose 'defensive' or 'aggressive'.")
+    combination_results = run_combinations_in_parallel(merged_data, all_indicators)
 
-    return sorted_results[:top_n]
+    # 전체 처리 종료 시간
+    total_end_time = time.time()
 
-# 투자자 성향 입력 및 결과 출력
-investor_type = input("Select investor type (aggressive/defensive): ").strip().lower()
+    print(f"\nTotal execution time: {total_end_time - total_start_time:.2f} seconds.")
 
-try:
-    top_results = filter_results_by_strategy(combination_results, investor_type, top_n=3)
-    if not top_results:
-        raise ValueError("Not enough valid results to display.")
-    print(f"\nSelected Top {len(top_results)} Strategies for {investor_type.capitalize()} Investor")
-    print_top_results_by_portfolio_value(top_results, top_n=len(top_results))
-except ValueError as e:
-    print(f"Error: {e}")
+    investor_type = "defensive"
+    try:
+        top_results = [
+            res for res in combination_results
+            if res['loss_preservation_ratio'] is not None and res['portfolio_value'] > 10000
+        ]
+        if investor_type == "defensive":
+            top_results = sorted(top_results, key=lambda x: (x['loss_preservation_ratio'], -x['portfolio_value']))
+        elif investor_type == "aggressive":
+            top_results = sorted(top_results, key=lambda x: -x['portfolio_value'])
+
+        print_top_results_by_portfolio_value(top_results, top_n=3)
+    except ValueError as e:
+        print(f"Error: {e}")
