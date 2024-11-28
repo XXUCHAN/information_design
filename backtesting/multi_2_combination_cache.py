@@ -267,7 +267,7 @@ if __name__ == "__main__":
         total_start_time = time.time()
         shared_cache = manager.dict()
 
-        cache_process = Pool(processes=1)
+        cache_process = Pool(processes=5)
         cache_process.apply(cache_data_partial, (shared_cache,))
         cache_process.close()
         cache_process.join()
@@ -275,9 +275,9 @@ if __name__ == "__main__":
         all_indicators = {
             'deposit_freq': [0.5, 1, 2, 3, 4],
             'withdrawal_freq': [0.5, 1],
-            'daily_commits': [1, 3, 5, 7],
-            'search_freq': [8, 13.07, 13.21, 15, 15.64],
-            'netflow_eth': []
+            #'daily_commits': [1, 3, 5, 7],
+            #'search_freq': [8, 13.07, 13.21, 15, 15.64],
+            #'netflow_eth': []
         }
 
         results = run_combinations_in_parallel(shared_cache, all_indicators)

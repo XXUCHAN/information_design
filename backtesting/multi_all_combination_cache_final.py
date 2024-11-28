@@ -280,16 +280,16 @@ if __name__ == "__main__":
         all_indicators = {
             'deposit_freq': [0.5, 1, 2, 3, 4],
             'withdrawal_freq': [0.5, 1],
-            'daily_commits': [1, 3, 5, 7],
-            'netflow_eth': None,
-            'search_freq': [8, 13.07, 13.21, 15, 15.64]
+            #'daily_commits': [1, 3, 5, 7],
+            #'netflow_eth': None,
+            #'search_freq': [8, 13.07, 13.21, 15, 15.64]
         }
 
         results = run_combinations_in_parallel(shared_cache, all_indicators)
         merged_data = merge_data(shared_cache)
 
         # User-defined strategy type
-        strategy_type = "aggressive"  # Change to "defensive" for defensive strategy
+        strategy_type = "defensive"  # Change to "defensive" for defensive strategy
         print_top_results_with_details(results, merged_data, type=strategy_type)
 
         total_end_time = time.time()
