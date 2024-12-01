@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 from itertools import product, combinations
-from multiprocessing import Pool, Manager, cpu_count
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time  # Execution time measurement
-
 
 # User-defined date range
 start_date = pd.to_datetime("2022-11-08")
@@ -39,7 +38,6 @@ def load_and_prepare_data():
 
     return eth_prices, deposit_freq, withdrawal_freq, daily_commits, search_freq, netflow_eth
 
-# Existing functions, no changes required to use the filtered data
 def cache_data(shared_cache):
     eth_prices, deposit_freq, withdrawal_freq, daily_commits, search_freq, netflow_eth = load_and_prepare_data()
     shared_cache['eth_prices'] = eth_prices
@@ -87,7 +85,6 @@ def safe_find_optimal_lag(series1, series2, dates, max_lag=30):
         return None
     return np.argmax(np.abs(correlations)) + 1
 
-
 # 시그널 생성 함수
 def generate_signal(data, indicator, threshold, lag=None):
     data = data.copy()
@@ -107,7 +104,6 @@ def generate_signal(data, indicator, threshold, lag=None):
     elif indicator == 'search_freq':
         data[f'{indicator}_signal'] = np.where(data[f'{indicator}_lag'] > threshold, 1, -1)
     return data
-
 # 백테스팅 함수
 def safe_backtest(data, thresholds, cash=10000):
     data = data.copy()
@@ -147,6 +143,47 @@ def safe_backtest(data, thresholds, cash=10000):
 
 
 
+def process_combination(args):
+    merged_data, combination, thresholds, initial_cash = args
+    threshold_dict = dict(zip(combination, thresholds))
+    final_value, buy_sell_dates, lags = safe_backtest(merged_data, threshold_dict)
+    return {
+        'combination': combination,
+        'thresholds': threshold_dict,
+        'portfolio_value': final_value,
+        'lags': lags
+    } if final_value is not None else None
+
+def run_combinations_in_parallel(shared_cache, all_indicators, initial_cash=10000):
+    print("Merging cached data...")
+    merged_data = merge_data(shared_cache)
+    fixed_indicators = ['deposit_freq', 'withdrawal_freq']
+    variable_indicators = [ind for ind in all_indicators if ind not in fixed_indicators]
+
+    valid_combinations = [
+        fixed_indicators + list(combo)
+        for i in range(len(variable_indicators) + 1)
+        for combo in combinations(variable_indicators, i)
+    ]
+
+    tasks = []
+    for combination in valid_combinations:
+        thresholds = product(*[
+            all_indicators[ind] if all_indicators[ind] is not None else []
+            for ind in combination
+        ])
+        for threshold in thresholds:
+            tasks.append((merged_data, combination, threshold, initial_cash))
+
+    results = []
+    with ThreadPoolExecutor(max_workers=8) as executor:  # Use multithreading here
+        future_to_task = {executor.submit(process_combination, task): task for task in tasks}
+        for future in as_completed(future_to_task):
+            result = future.result()
+            if result is not None:
+                results.append(result)
+    return results
+
 # 손실 보존률 계산 함수
 def safe_calculate_loss_preservation(data, signals, initial_cash=10000):
     data = data.copy()
@@ -177,45 +214,6 @@ def safe_calculate_loss_preservation(data, signals, initial_cash=10000):
     final_value = portfolio[-1]
     strategy_loss = (final_value - initial_cash) / initial_cash
     return strategy_loss / market_loss if market_loss != 0 else None
-
-# 조합 처리 함수
-def process_combination(args):
-    merged_data, combination, thresholds, initial_cash = args
-    threshold_dict = dict(zip(combination, thresholds))
-    final_value, buy_sell_dates, lags = safe_backtest(merged_data, threshold_dict)
-    return {
-        'combination': combination,
-        'thresholds': threshold_dict,
-        'portfolio_value': final_value,
-        'lags': lags
-    } if final_value is not None else None
-
-# 병렬 작업 실행 함수
-def run_combinations_in_parallel(shared_cache, all_indicators, initial_cash=10000):
-    print("Merging cached data...")
-    merged_data = merge_data(shared_cache)
-    fixed_indicators = ['deposit_freq', 'withdrawal_freq']
-    variable_indicators = [ind for ind in all_indicators if ind not in fixed_indicators]
-
-    valid_combinations = [
-        fixed_indicators + list(combo)
-        for i in range(len(variable_indicators) + 1)
-        for combo in combinations(variable_indicators, i)
-    ]
-
-    tasks = []
-    for combination in valid_combinations:
-        thresholds = product(*[
-            all_indicators[ind] if all_indicators[ind] is not None else []
-            for ind in combination
-        ])
-        for threshold in thresholds:
-            tasks.append((merged_data, combination, threshold, initial_cash))
-
-    with Pool(processes=cpu_count()) as pool:
-        results = pool.map(process_combination, tasks)
-    return [res for res in results if res is not None]
-
 
 # 최상위 결과 출력 (매수, 매도 시간 및 손실 보존률 포함)
 def print_top_results_with_details(results, merged_data, type, top_n=3, initial_cash=10000):
@@ -265,34 +263,33 @@ def print_top_results_with_details(results, merged_data, type, top_n=3, initial_
         for date, action, price in buy_sell_dates:
             print(f"    {date} - {action} at {price:.2f}")
         print("-" * 50)
-
-
 if __name__ == "__main__":
-    with Manager() as manager:
-        total_start_time = time.time()
-        shared_cache = manager.dict()
-        cache_process = Pool(processes=1)
-        cache_process.apply(cache_data, (shared_cache,))
-        cache_process.close()
-        cache_process.join()
+    total_start_time = time.time()
+    shared_cache = {}
 
-        all_indicators = {
-            'deposit_freq': [0.5, 1, 2, 3, 4],
-            'withdrawal_freq': [0.5, 1],
-            #'daily_commits': [1, 3, 5, 7],
-            #'netflow_eth': None,
-            #'search_freq': [8, 13.07, 13.21, 15, 15.64]
-        }
+    # Load and cache data
+    eth_prices, deposit_freq, withdrawal_freq, daily_commits, search_freq, netflow_eth = load_and_prepare_data()
+    shared_cache['eth_prices'] = eth_prices
+    shared_cache['deposit_freq'] = deposit_freq
+    shared_cache['withdrawal_freq'] = withdrawal_freq
+    shared_cache['daily_commits'] = daily_commits
+    shared_cache['search_freq'] = search_freq
+    shared_cache['netflow_eth'] = netflow_eth
 
-        results = run_combinations_in_parallel(shared_cache, all_indicators)
-        merged_data = merge_data(shared_cache)
+    all_indicators = {
+        'deposit_freq': [0.5, 1, 2, 3, 4],
+        'withdrawal_freq': [0.5, 1],
+        'daily_commits': [1, 3, 5, 7],
+        'netflow_eth': None,
+        'search_freq': [8, 13.07, 13.21, 15, 15.64]
+    }
 
-        # User-defined strategy type
-        strategy_type = "defensive"  # Change to "defensive" for defensive strategy
-        print_top_results_with_details(results, merged_data, type=strategy_type)
+    results = run_combinations_in_parallel(shared_cache, all_indicators)
+    merged_data = merge_data(shared_cache)
 
-        total_end_time = time.time()
-        print(f"\nTotal execution time: {total_end_time - total_start_time:.2f} seconds.")
+    # User-defined strategy type
+    strategy_type = "aggressive"  # Change to "aggressive", "defensive", or "balanced"
+    print_top_results_with_details(results, merged_data, type=strategy_type)
 
-
-#33.25초
+    total_end_time = time.time()
+    print(f"\nTotal execution time: {total_end_time - total_start_time:.2f} seconds.")
