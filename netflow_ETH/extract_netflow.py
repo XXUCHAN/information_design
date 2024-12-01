@@ -6,7 +6,7 @@ end_date = "2024-11-09"
 
 # 입출금 데이터 로드
 deposit_data = pd.read_csv('../deposit_ETH/deposit_volume.csv')
-withdrawal_data = pd.read_csv('../withrawal_ETH/withdrawal_eth.csv')
+withdrawal_data = pd.read_csv('../withdrawal_ETH/withdrawal_eth.csv')
 
 # 날짜 형식 변환
 deposit_data['timeStamp'] = pd.to_datetime(deposit_data['timeStamp'])

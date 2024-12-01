@@ -1,7 +1,7 @@
 import pandas as pd
 
 # 데이터 로드
-data = pd.read_csv('withrawal_ETH/withdrawal_transactions.csv')
+data = pd.read_csv('withdrawal_ETH/withdrawal_transactions.csv')
 
 # value 열을 숫자 형식으로 변환 후 Ether 단위로 변환
 data['value'] = pd.to_numeric(data['value'], errors='coerce')  # 문자열을 숫자로 변환 (변환 불가 시 NaN 처리)

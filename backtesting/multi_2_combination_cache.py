@@ -36,7 +36,7 @@ def cache_data_partial(shared_cache):
     """Cache only eth_prices, deposit_freq, and withdrawal_freq."""
     eth_prices = pd.read_csv('../ethereum_daily_prices.csv', parse_dates=['Date'])
     deposit_freq = pd.read_csv('../deposit_ETH/deposit_frequency.csv')
-    withdrawal_freq = pd.read_csv('../withrawal_ETH/withdrawal_frequency.csv')
+    withdrawal_freq = pd.read_csv('../withdrawal_ETH/withdrawal_frequency.csv')
 
     # Rename and clean columns
     deposit_freq.rename(columns={'Frequency': 'deposit_freq'}, inplace=True)

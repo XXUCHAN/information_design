@@ -8,8 +8,8 @@ deposit_freq = pd.read_csv('../deposit_ETH/deposit_frequency.csv')
 deposit_value = pd.read_csv('../deposit_ETH/deposit_volume.csv')
 daily_commits = pd.read_csv('../github_dev_ETH/daily_commits.csv', parse_dates=['commit_date'])
 netflow_eth = pd.read_csv('../netflow_ETH/netflow_eth.csv')
-withdrawal_value = pd.read_csv('../withrawal_ETH/withdrawal_eth.csv')
-withdrawal_freq = pd.read_csv('../withrawal_ETH/withdrawal_frequency.csv')
+withdrawal_value = pd.read_csv('../withdrawal_ETH/withdrawal_eth.csv')
+withdrawal_freq = pd.read_csv('../withdrawal_ETH/withdrawal_frequency.csv')
 
 # 열 이름 변경
 deposit_freq.rename(columns={'Frequency': 'deposit_freq'}, inplace=True)
