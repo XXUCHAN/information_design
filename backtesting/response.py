@@ -5,11 +5,11 @@ from multiprocessing import Pool, Manager, cpu_count
 import time  # Execution time measurement
 from functools import reduce
 import argparse
-import json
+import json,os
 # User-defined date range
 start_date = pd.to_datetime("2022-11-08")
 end_date = pd.to_datetime("2024-11-08")
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def load_and_process_csv(file_info):
     file_path, parse_dates, rename_columns = file_info
     df = pd.read_csv(file_path, parse_dates=parse_dates)
@@ -29,14 +29,13 @@ def load_and_process_csv(file_info):
 def load_and_prepare_data_parallel():
     # Define file paths and configurations for parallel processing
     file_configs = [
-        ('../ethereum_daily_prices.csv', ['Date'], None),
-        ('../deposit_ETH/deposit_frequency.csv', None, {'Frequency': 'deposit_freq'}),
-        ('../withdrawal_ETH/withdrawal_frequency.csv', None, {'Frequency': 'withdrawal_freq'}),
-        ('../github_dev_ETH/daily_commits.csv', ['commit_date'], {'commit_date': 'Date', 'count': 'daily_commits'}),
-        ('../google_searching/search_daily.csv', None, {'Frequency': 'search_freq'}),
-        ('../netflow_ETH/netflow_eth.csv', None, {'value': 'netflow_eth', 'timeStamp': 'Date'})
+        (os.path.join(BASE_DIR, '../ethereum_daily_prices.csv'), ['Date'], None),
+        (os.path.join(BASE_DIR, '../deposit_ETH/deposit_frequency.csv'), None, {'Frequency': 'deposit_freq'}),
+        (os.path.join(BASE_DIR, '../withdrawal_ETH/withdrawal_frequency.csv'), None, {'Frequency': 'withdrawal_freq'}),
+        (os.path.join(BASE_DIR, '../github_dev_ETH/daily_commits.csv'), ['commit_date'], {'commit_date': 'Date', 'count': 'daily_commits'}),
+        (os.path.join(BASE_DIR, '../google_searching/search_daily.csv'), None, {'Frequency': 'search_freq'}),  # 수정된 줄
+        (os.path.join(BASE_DIR, '../netflow_ETH/netflow_eth.csv'), None, {'value': 'netflow_eth', 'timeStamp': 'Date'})
     ]
-
     # Use multiprocessing to load and process CSV files
     with Pool(processes=cpu_count()) as pool:
         results = pool.map(load_and_process_csv, file_configs)
@@ -262,8 +261,9 @@ def run_combinations_in_parallel(shared_cache, all_indicators, initial_cash=1000
 
 
 # 최상위 결과 출력 (매수, 매도 시간 및 손실 보존률 포함)
-def print_top_results_with_details(results, merged_data, type, top_n=3, initial_cash=10000):
+def prepare_results_as_json(results, merged_data, strategy_type, top_n=3, initial_cash=10000):
     # Calculate loss preservation ratios for all results
+    output = {"strategy": strategy_type, "results": []}
     for res in results:
         merged_data_with_signals = merged_data.copy()
         for indicator, lag in res['lags'].items():
@@ -279,42 +279,91 @@ def print_top_results_with_details(results, merged_data, type, top_n=3, initial_
         res['loss_preservation'] = loss_preservation
 
     # Filter results based on strategy type
-    if type == "aggressive":
-        # Sort by portfolio value in descending order
+    if strategy_type == "aggressive":
         sorted_results = sorted(results, key=lambda x: x['portfolio_value'], reverse=True)[:top_n]
-    elif type == "defensive":
-        # Filter profitable results and sort by loss preservation ratio
+    elif strategy_type == "defensive":
         defensive_results = [res for res in results if res['portfolio_value'] > initial_cash]
         sorted_results = sorted(defensive_results, key=lambda x: x['loss_preservation'], reverse=True)[:top_n]
-    elif type == "balanced":
-        # Filter results with 0 < loss preservation < 1 and sort by portfolio value
+    elif strategy_type == "balanced":
         balanced_results = [
             res for res in results if 0 < res['loss_preservation'] < 1
         ]
         sorted_results = sorted(balanced_results, key=lambda x: x['portfolio_value'], reverse=True)[:top_n]
     else:
-        print("Invalid type specified. Choose 'aggressive', 'defensive', or 'balanced'.")
-        return
+        return {"error": f"Invalid strategy type: {strategy_type}"}
 
-    if not sorted_results:
-        print(f"No results found for {type} strategy.")
-        return
+    for res in sorted_results:
+        result_data = {
+            "rank": len(output["results"]) + 1,
+            "portfolio_value": res['portfolio_value'],
+            "combination": res['combination'],
+            "lags": res['lags'],
+            "thresholds": res['thresholds'],
+            "loss_preservation_ratio": res['loss_preservation'],
+            "buy_sell_dates": []
+        }
 
-    print(f"Top {len(sorted_results)} Results ({type.title()} Strategy):")
-    for idx, res in enumerate(sorted_results, start=1):
-        print(f"Rank {idx}:")
-        print(f"  Portfolio Value: {res['portfolio_value']}")
-        print(f"  Combination: {res['combination']}")
-        print(f"  Lags: {res['lags']}")
-        print(f"  Thresholds: {res['thresholds']}")
-        print(f"  Loss Preservation Ratio: {res['loss_preservation']:.2f}")
-
-        # Print Buy/Sell Dates
-        print("  Buy/Sell Dates:")
+        # Generate Buy/Sell Dates
         _, buy_sell_dates, _ = safe_backtest(merged_data, res['thresholds'], cash=initial_cash)
         for date, action, price in buy_sell_dates:
-            print(f"    {date} - {action} at {price:.2f}")
-        print("-" * 50)
+            result_data["buy_sell_dates"].append({
+                "date": str(date),
+                "action": action,
+                "price": price
+            })
+        output["results"].append(result_data)
+    return output
+def prepare_results_as_json(results, merged_data, strategy_type, top_n=3, initial_cash=10000):
+    output = {"strategy": strategy_type, "results": []}
+    for res in results:
+        merged_data_with_signals = merged_data.copy()
+        for indicator, lag in res['lags'].items():
+            merged_data_with_signals = generate_signal(
+                merged_data_with_signals, indicator, res['thresholds'][indicator], lag)
+        merged_data_with_signals['final_signal'] = np.sign(np.sum([
+            merged_data_with_signals[f'{indicator}_signal'] for indicator in res['thresholds'].keys()
+        ], axis=0))
+
+        # Calculate and store loss preservation ratio
+        loss_preservation = safe_calculate_loss_preservation(
+            merged_data_with_signals, res['thresholds'], initial_cash)
+        res['loss_preservation'] = loss_preservation
+
+    # Filter results based on strategy type
+    if strategy_type == "aggressive":
+        sorted_results = sorted(results, key=lambda x: x['portfolio_value'], reverse=True)[:top_n]
+    elif strategy_type == "defensive":
+        defensive_results = [res for res in results if res['portfolio_value'] > initial_cash]
+        sorted_results = sorted(defensive_results, key=lambda x: x['loss_preservation'], reverse=True)[:top_n]
+    elif strategy_type == "balanced":
+        balanced_results = [
+            res for res in results if 0 < res['loss_preservation'] < 1
+        ]
+        sorted_results = sorted(balanced_results, key=lambda x: x['portfolio_value'], reverse=True)[:top_n]
+    else:
+        return {"error": f"Invalid strategy type: {strategy_type}"}
+
+    for res in sorted_results:
+        # Convert Numpy types to native Python types
+        result_data = {
+            "rank": int(len(output["results"]) + 1),
+            "portfolio_value": float(res['portfolio_value']),
+            "combination": res['combination'],
+            "lags": {key: int(val) for key, val in res['lags'].items()},
+            "thresholds": {key: float(val) for key, val in res['thresholds'].items()},
+            "loss_preservation_ratio": float(res['loss_preservation']),
+            "buy_sell_dates": []
+        }
+
+        # Generate Buy/Sell Dates
+        _, buy_sell_dates, _ = safe_backtest(merged_data, res['thresholds'], cash=initial_cash)
+        for date, action, price in buy_sell_dates:
+            result_data["buy_sell_dates"].append({
+                "date": str(date),
+                "action": action,
+            })
+        output["results"].append(result_data)
+    return output
 
 if __name__ == "__main__":
     with Manager() as manager:
@@ -324,15 +373,20 @@ if __name__ == "__main__":
         parser.add_argument("--combination", required=True, help="Comma-separated list of indicators")
         parser.add_argument("--asset", required=True, type=float, help="Initial asset value")
         args = parser.parse_args()
+
         total_start_time = time.time()
         shared_cache = manager.dict()
+
+        # Update parameters
         start_date = pd.to_datetime(args.start_date)
         end_date = pd.to_datetime(args.end_date)
-        combination = args.combination.split(",")  # 리스트로 변환
+        combination = args.combination.split(",")  # Convert to list
         asset = args.asset
-        # Cache data in the main process
+
+        # Cache data
         cache_data(shared_cache)
 
+        # Filter indicators based on combination
         all_indicators = {
             'deposit_freq': [0.5, 1, 2, 3, 4],
             'withdrawal_freq': [0.5, 1],
@@ -342,18 +396,26 @@ if __name__ == "__main__":
         }
         filtered_indicators = {key: all_indicators[key] for key in combination if key in all_indicators}
 
-        # Run parallel processing with batching
+        # Run parallel processing
         results = run_combinations_in_parallel(shared_cache, filtered_indicators, batch_size=500)
 
         # Merge and evaluate results
         merged_data = merge_data(shared_cache)
 
-        print_top_results_with_details(results, merged_data, type='defensive')
-        print_top_results_with_details(results, merged_data, type='aggressive')
-        print_top_results_with_details(results, merged_data, type='balanced')
+        # Prepare results for JSON output
+        output = {
+            "strategies": [
+                prepare_results_as_json(results, merged_data, "defensive"),
+                prepare_results_as_json(results, merged_data, "aggressive"),
+                prepare_results_as_json(results, merged_data, "balanced"),
+            ]
+        }
 
-
+        # Save or return JSON
+        json_output = json.dumps(output, indent=4)
+        with open("results.json", "w") as file:
+            file.write(json_output)
+        #print(json_output)
+        print(json.dumps(output))
         total_end_time = time.time()
-        print(f"\nTotal execution time: {total_end_time - total_start_time:.2f} seconds.")
 
-#33.25초
