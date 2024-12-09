@@ -6,7 +6,7 @@ import time  # Execution time measurement
 
 
 # User-defined date range
-start_date = pd.to_datetime("2022-11-08")
+start_date = pd.to_datetime("2020-11-08")
 end_date = pd.to_datetime("2024-11-08")
 
 def load_and_prepare_data():
