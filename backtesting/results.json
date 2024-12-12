@@ -5,113 +5,69 @@
             "results": [
                 {
                     "rank": 1,
-                    "portfolio_value": 10859.35240414052,
+                    "portfolio_value": 25069.038932902455,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
-                        "deposit_freq": 1.0,
+                        "deposit_freq": 0.5,
                         "withdrawal_freq": 1.0
                     },
-                    "loss_preservation_ratio": 0.019545279344719252,
+                    "loss_preservation_ratio": 0.16558579233421997,
                     "buy_sell_dates": [
                         {
-                            "date": "2021-02-03 00:00:00",
+                            "date": "2021-02-20 00:00:00",
                             "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-05 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-03-05 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-08-18 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-09-02 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-09-23 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-14 00:00:00",
-                            "action": "SELL"
                         }
                     ]
                 },
                 {
                     "rank": 2,
-                    "portfolio_value": 12768.572468141547,
+                    "portfolio_value": 25069.038932902455,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
-                        "deposit_freq": 2.0,
+                        "deposit_freq": 1.0,
                         "withdrawal_freq": 1.0
                     },
-                    "loss_preservation_ratio": 0.06296895431397082,
+                    "loss_preservation_ratio": 0.16558579233421997,
                     "buy_sell_dates": [
                         {
-                            "date": "2021-02-03 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-05 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-03-05 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-08-18 00:00:00",
+                            "date": "2021-02-20 00:00:00",
                             "action": "BUY"
                         }
                     ]
                 },
                 {
                     "rank": 3,
-                    "portfolio_value": 17835.388075013903,
+                    "portfolio_value": 25069.038932902455,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
-                        "deposit_freq": 3.0,
+                        "deposit_freq": 2.0,
                         "withdrawal_freq": 1.0
                     },
-                    "loss_preservation_ratio": 0.17820960058126145,
+                    "loss_preservation_ratio": 0.16558579233421997,
                     "buy_sell_dates": [
                         {
-                            "date": "2021-02-03 00:00:00",
+                            "date": "2021-02-20 00:00:00",
                             "action": "BUY"
                         }
                     ]
@@ -123,169 +79,69 @@
             "results": [
                 {
                     "rank": 1,
-                    "portfolio_value": 53889.65193430053,
+                    "portfolio_value": 64022.96475097496,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
-                        "deposit_freq": 0.5,
-                        "withdrawal_freq": 1.0
+                        "deposit_freq": 1.0,
+                        "withdrawal_freq": 0.5
                     },
-                    "loss_preservation_ratio": 0.9982348373789267,
+                    "loss_preservation_ratio": 0.5936301221574216,
                     "buy_sell_dates": [
                         {
-                            "date": "2021-02-03 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
-                        },
-                        {
-                            "date": "2021-11-09 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2022-03-09 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2022-04-21 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2022-05-25 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2022-09-15 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2022-11-22 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-05-02 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-03-05 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-03-11 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-03-29 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-04-08 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-04-21 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-04-22 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-04-24 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-04-28 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-05-08 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-05-09 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-08-21 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-08-25 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-09-25 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-09-26 00:00:00",
-                            "action": "SELL"
                         }
                     ]
                 },
                 {
                     "rank": 2,
-                    "portfolio_value": 50485.13060430739,
+                    "portfolio_value": 64022.96475097496,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
                         "deposit_freq": 2.0,
                         "withdrawal_freq": 0.5
                     },
-                    "loss_preservation_ratio": 0.9208017376294436,
+                    "loss_preservation_ratio": 0.5936301221574216,
                     "buy_sell_dates": [
                         {
-                            "date": "2020-12-13 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-05 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-11-06 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-06-18 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
                         }
                     ]
                 },
                 {
                     "rank": 3,
-                    "portfolio_value": 50237.09450802512,
+                    "portfolio_value": 64022.96475097496,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
                         "deposit_freq": 3.0,
                         "withdrawal_freq": 0.5
                     },
-                    "loss_preservation_ratio": 0.9151603560890506,
+                    "loss_preservation_ratio": 0.5936301221574216,
                     "buy_sell_dates": [
                         {
-                            "date": "2020-12-13 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
                         }
                     ]
@@ -297,363 +153,70 @@
             "results": [
                 {
                     "rank": 1,
-                    "portfolio_value": 31165.011801206096,
+                    "portfolio_value": 64022.96475097496,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
                         "deposit_freq": 1.0,
                         "withdrawal_freq": 0.5
                     },
-                    "loss_preservation_ratio": 0.4813811726082157,
+                    "loss_preservation_ratio": 0.5936301221574216,
                     "buy_sell_dates": [
                         {
-                            "date": "2020-12-13 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2020-12-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2021-01-05 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-05 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-11-06 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-06-18 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-30 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-31 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
                         }
                     ]
                 },
                 {
                     "rank": 2,
-                    "portfolio_value": 24771.091959674213,
+                    "portfolio_value": 64022.96475097496,
                     "combination": [
                         "deposit_freq",
                         "withdrawal_freq"
                     ],
                     "lags": {
-                        "deposit_freq": 6,
-                        "withdrawal_freq": 13
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
                     },
                     "thresholds": {
-                        "deposit_freq": 0.5,
+                        "deposit_freq": 2.0,
                         "withdrawal_freq": 0.5
                     },
-                    "loss_preservation_ratio": 0.3359566077750339,
+                    "loss_preservation_ratio": 0.5936301221574216,
                     "buy_sell_dates": [
                         {
-                            "date": "2020-12-13 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
-                        },
+                        }
+                    ]
+                },
+                {
+                    "rank": 3,
+                    "portfolio_value": 64022.96475097496,
+                    "combination": [
+                        "deposit_freq",
+                        "withdrawal_freq"
+                    ],
+                    "lags": {
+                        "deposit_freq": 14,
+                        "withdrawal_freq": 30
+                    },
+                    "thresholds": {
+                        "deposit_freq": 3.0,
+                        "withdrawal_freq": 0.5
+                    },
+                    "loss_preservation_ratio": 0.5936301221574216,
+                    "buy_sell_dates": [
                         {
-                            "date": "2020-12-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2021-01-05 00:00:00",
+                            "date": "2020-12-30 00:00:00",
                             "action": "BUY"
-                        },
-                        {
-                            "date": "2021-01-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2021-02-03 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2021-11-09 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2021-11-14 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2021-12-24 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2021-12-28 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2022-04-21 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2022-04-29 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2022-09-15 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2022-09-20 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-05-02 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-05-11 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-05-25 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-06-06 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-06-19 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-07-02 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-08-16 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-10-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-11-02 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-05 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-11-06 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-16 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-11-22 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-11-27 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-12-05 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-12-07 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2023-12-10 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2023-12-28 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-01-01 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-01-31 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-02-01 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-03-11 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-03-12 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-04-09 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-04-21 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-05-09 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-05-12 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-05-22 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-05-23 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-05-29 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-05-30 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-10 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-06-12 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-17 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-06-19 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-06-24 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-07-17 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-07-21 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-07-27 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-08-25 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-08-28 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-08-29 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-09-10 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-09-15 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-09-16 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-09-22 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-09-25 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-09-30 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-01 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-02 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-08 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-10 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-15 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-21 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-22 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-10-27 00:00:00",
-                            "action": "SELL"
-                        },
-                        {
-                            "date": "2024-10-31 00:00:00",
-                            "action": "BUY"
-                        },
-                        {
-                            "date": "2024-11-04 00:00:00",
-                            "action": "SELL"
                         }
                     ]
                 }

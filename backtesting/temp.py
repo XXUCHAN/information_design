@@ -1,13 +1,14 @@
+from datetime import datetime
 import pandas as pd
 import numpy as np
 from itertools import product, combinations
 from multiprocessing import Pool, Manager, cpu_count
 import time  # Execution time measurement
-import json
+import json,os
 import argparse
 # User-defined date range
 start_date = pd.to_datetime("2020-11-08")
-end_date = pd.to_datetime("2024-11-08")
+end_date = pd.to_datetime("2021-11-08")
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--start_date", required=True, help="Start date in YYYY-MM-DD format")
@@ -15,13 +16,15 @@ def parse_arguments():
     parser.add_argument("--combination", required=True, help="Comma-separated list of indicators")
     parser.add_argument("--asset", required=True, type=float, help="Initial asset value")
     return parser.parse_args()
-def load_and_prepare_data():
-    eth_prices = pd.read_csv('../ethereum_daily_prices.csv', parse_dates=['Date'])
-    deposit_freq = pd.read_csv('../deposit_ETH/deposit_frequency.csv')
-    daily_commits = pd.read_csv('../github_dev_ETH/daily_commits.csv', parse_dates=['commit_date'])
-    netflow_eth = pd.read_csv('../netflow_ETH/netflow_eth.csv')
-    withdrawal_freq = pd.read_csv('../withdrawal_ETH/withdrawal_frequency.csv')
-    search_freq = pd.read_csv('../google_searching/search_daily.csv')
+def load_and_prepare_data(start_date, end_date):
+    BASE_DIR = "/Users/isuchan/IdeaProjects/python_test/ID"  # 데이터 파일이 저장된 기본 디렉토리
+
+    eth_prices = pd.read_csv(os.path.join(BASE_DIR, 'ethereum_daily_prices.csv'), parse_dates=['Date'])
+    deposit_freq = pd.read_csv(os.path.join(BASE_DIR, 'deposit_ETH/deposit_frequency.csv'))
+    withdrawal_freq = pd.read_csv(os.path.join(BASE_DIR, 'withdrawal_ETH/withdrawal_frequency.csv'))
+    daily_commits = pd.read_csv(os.path.join(BASE_DIR, 'github_dev_ETH/daily_commits.csv'), parse_dates=['commit_date'])
+    search_freq = pd.read_csv(os.path.join(BASE_DIR, 'google_searching/search_daily.csv'))
+    netflow_eth = pd.read_csv(os.path.join(BASE_DIR, 'netflow_ETH/netflow_eth.csv'))
 
     # Rename and clean columns
     deposit_freq.rename(columns={'Frequency': 'deposit_freq'}, inplace=True)
@@ -47,14 +50,8 @@ def load_and_prepare_data():
 
 # Existing functions, no changes required to use the filtered data
 def cache_data(shared_cache, start_date, end_date):
-    eth_prices, deposit_freq, withdrawal_freq, daily_commits, search_freq, netflow_eth = load_and_prepare_data()
-
-    eth_prices = eth_prices[(eth_prices['Date'] >= start_date) & (eth_prices['Date'] <= end_date)]
-    deposit_freq = deposit_freq[(deposit_freq['Date'] >= start_date) & (deposit_freq['Date'] <= end_date)]
-    withdrawal_freq = withdrawal_freq[(withdrawal_freq['Date'] >= start_date) & (withdrawal_freq['Date'] <= end_date)]
-    daily_commits = daily_commits[(daily_commits['Date'] >= start_date) & (daily_commits['Date'] <= end_date)]
-    search_freq = search_freq[(search_freq['Date'] >= start_date) & (search_freq['Date'] <= end_date)]
-    netflow_eth = netflow_eth[(netflow_eth['Date'] >= start_date) & (netflow_eth['Date'] <= end_date)]
+    # 전달된 날짜 매개변수를 load_and_prepare_data에 전달
+    eth_prices, deposit_freq, withdrawal_freq, daily_commits, search_freq, netflow_eth = load_and_prepare_data(start_date, end_date)
 
     shared_cache['eth_prices'] = eth_prices
     shared_cache['deposit_freq'] = deposit_freq
@@ -155,6 +152,7 @@ def safe_backtest(data, thresholds, cash=10000):
             position = 0
             buy_sell_dates.append((row['Date'], 'SELL', row['Close']))
 
+
     # 최종 자산 가치 계산 (남은 현금 + 보유 자산 가치)
     final_value = cash + (position * data.iloc[-1]['Close'] if position > 0 else 0)
     return final_value, buy_sell_dates, lags
@@ -206,7 +204,6 @@ def process_combination(args):
 
 # 병렬 작업 실행 함수
 def run_combinations_in_parallel(shared_cache, all_indicators, initial_cash=10000):
-    print("Merging cached data...")
     merged_data = merge_data(shared_cache)
     fixed_indicators = ['deposit_freq', 'withdrawal_freq']
     variable_indicators = [ind for ind in all_indicators if ind not in fixed_indicators]
@@ -367,7 +364,8 @@ if __name__ == "__main__":
         for strategy_type in ["defensive", "aggressive", "balanced"]:
             strategies.append(get_top_results_with_details(results, merged_data, strategy_type))
 
-        # Prepare final JSON output
+        # Save results to JSON
+
         final_output = {"strategies": strategies}
         json_output = json.dumps(final_output, indent=4)
 

@@ -31,10 +31,11 @@ merged_data_withdrawal_freq['Frequency'] = merged_data_withdrawal_freq['Frequenc
 merged_data_deposit_freq['Frequency'] = merged_data_deposit_freq['Frequency'].fillna(0)
 merged_data_commits_freq['Frequency'] = merged_data_commits_freq['Frequency'].fillna(0)
 
-# UNIX 타임스탬프 변환 함수
-def convert_to_timestamp(df, value_col):
+# UNIX 타임스탬프 변환 함수 (lag 적용)
+def convert_to_timestamp(df, value_col, lag_days=0):
+    lag_seconds = lag_days * 86400  # lag를 초 단위로 변환
     return {
-        "timestamps": df['Date'].apply(lambda x: int(x.timestamp())).tolist(),
+        "timestamps": df['Date'].apply(lambda x: int(x.timestamp()) - lag_seconds).tolist(),
         "values": df[value_col].tolist()
     }
 
@@ -119,35 +120,35 @@ def main():
             (merged_data_withdrawal_freq['Date'] >= start_date) &
             (merged_data_withdrawal_freq['Date'] <= end_date)
             ][['Date', 'Frequency']].copy()
-        filtered_data["withdrawal_freq"] = convert_to_timestamp(filtered_withdrawal, 'Frequency')
+        filtered_data["withdrawal_freq"] = convert_to_timestamp(filtered_withdrawal, 'Frequency',optimal_lags["withdrawal_freq"])
 
     if "deposit_freq" in combination:
         filtered_deposit = merged_data_deposit_freq[
             (merged_data_deposit_freq['Date'] >= start_date) &
             (merged_data_deposit_freq['Date'] <= end_date)
             ][['Date', 'Frequency']].copy()
-        filtered_data["deposit_freq"] = convert_to_timestamp(filtered_deposit, 'Frequency')
+        filtered_data["deposit_freq"] = convert_to_timestamp(filtered_deposit, 'Frequency',optimal_lags["deposit_freq"])
 
     if "commits_freq" in combination:
         filtered_commits = merged_data_commits_freq[
             (merged_data_commits_freq['Date'] >= start_date) &
             (merged_data_commits_freq['Date'] <= end_date)
             ][['Date', 'Frequency']].copy()
-        filtered_data["commits_freq"] = convert_to_timestamp(filtered_commits, 'Frequency')
+        filtered_data["commits_freq"] = convert_to_timestamp(filtered_commits, 'Frequency',optimal_lags["commits_freq"])
 
     if "netflow" in combination:
         filtered_netflow = merged_data_netflow[
             (merged_data_netflow['Date'] >= start_date) &
             (merged_data_netflow['Date'] <= end_date)
             ][['Date', 'value']].copy()
-        filtered_data["netflow"] = convert_to_timestamp(filtered_netflow, 'value')
+        filtered_data["netflow"] = convert_to_timestamp(filtered_netflow, 'value',optimal_lags["netflow"])
 
     if "search_freq" in combination:
         filtered_search = merged_data_search_freq[
             (merged_data_search_freq['Date'] >= start_date) &
             (merged_data_search_freq['Date'] <= end_date)
             ][['Date', 'Frequency']].copy()
-        filtered_data["search_freq"] = convert_to_timestamp(filtered_search, 'Frequency')
+        filtered_data["search_freq"] = convert_to_timestamp(filtered_search, 'Frequency',optimal_lags["search_freq"])
 
     output = {
         "start_date": args.start_date,
@@ -160,6 +161,7 @@ def main():
 
     # JSON 출력
     print(json.dumps(output, indent=4))
-
+    with open("response.json", "w") as file:
+        file.write(json.dumps(output, indent=4))
 if __name__ == "__main__":
     main()
